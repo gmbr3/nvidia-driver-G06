@@ -141,7 +141,7 @@ NVIDIA driver tools for computing with GPGPUs using CUDA or OpenCL.
 Summary:        Common files for the NVIDIA driver packages
 Group:          System/Libraries
 Provides:       kernel-firmware-nvidia-gspx-G06-all = %{version}
-Conflicts:      kernel-firmware-nvidia-gspx-G06-all
+Conflicts:      kernel-firmware-nvidia-gspx-G06-all = %{version}
 Requires:       nvidia-modprobe >= %{version}
 Requires:       (nvidia-driver-G06-kmp = %{version} or nvidia-open-driver-G06-kmp = %{version} or nvidia-open-driver-G06-signed-kmp = %{version})
 # prefer the opengpu driver; resolver works alphabetically and would suggest
