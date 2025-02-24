@@ -12,3 +12,12 @@ ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200
 # Disable runtime PM for NVIDIA VGA/3D controller devices on driver unbind
 ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="on"
 ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="on"
+
+# This is still needed for proprietary kernel modules; see also
+# https://github.com/openSUSE/nvidia-driver-G06/issues/52
+ACTION=="bind", DRIVER=="nvidia", RUN+="/usr/lib/nvidia/udev-dynamic-static-node"
+KERNEL=="nvidia[0-9]*", OWNER="root", GROUP="video", MODE="0660", TAG+="uaccess"
+KERNEL=="nvidiactl", OWNER="root", GROUP="video", MODE="0660", TAG+="uaccess"
+KERNEL=="nvidia-uvm", OWNER="root", GROUP="video", MODE="0660", TAG+="uaccess"
+KERNEL=="nvidia-uvm-tools", OWNER="root", GROUP="video", MODE="0660", TAG+="uaccess"
+KERNEL=="nvidia-modeset", OWNER="root", GROUP="video", MODE="0660", TAG+="uaccess"
