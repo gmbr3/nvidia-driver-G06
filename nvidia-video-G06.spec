@@ -28,6 +28,8 @@
 %define _firmwaredir /lib/firmware
 %endif
 
+%define remove_if_exists() test -f %{1} && rm %{1}
+
 Name:           nvidia-video-G06
 Version:        570.86.16
 Release:        0
@@ -487,7 +489,6 @@ exit 0
 %systemd_post nvidia-persistenced.service
 # the official way above doesn't seem to work ;-(
 /usr/bin/systemctl preset nvidia-persistenced.service || true
-exit 0
 
 %preun -n nvidia-compute-G06 -p /bin/bash
 /sbin/ldconfig
@@ -514,41 +515,12 @@ if [ -f /etc/modprobe.d/50-nvidia.conf ]; then
   sed -i "s/33/$VIDEOGID/" /etc/modprobe.d/50-nvidia.conf
 %endif
 fi
-# This is still needed for proprietary kernel modules; see also
-# https://github.com/openSUSE/nvidia-driver-G06/issues/52
-#
-# Create symlinks for udev so these devices will get user ACLs by logind later (bnc#1000625)
-mkdir -p /run/udev/static_node-tags/uaccess
-mkdir -p /usr/lib/tmpfiles.d
-ln -snf /dev/nvidiactl /run/udev/static_node-tags/uaccess/nvidiactl 
-ln -snf /dev/nvidia-uvm /run/udev/static_node-tags/uaccess/nvidia-uvm
-ln -snf /dev/nvidia-uvm-tools /run/udev/static_node-tags/uaccess/nvidia-uvm-tools
-ln -snf /dev/nvidia-modeset /run/udev/static_node-tags/uaccess/nvidia-modeset
-cat >  /usr/lib/tmpfiles.d/nvidia-logind-acl-trick-G06.conf << EOF
-L /run/udev/static_node-tags/uaccess/nvidiactl - - - - /dev/nvidiactl
-L /run/udev/static_node-tags/uaccess/nvidia-uvm - - - - /dev/nvidia-uvm
-L /run/udev/static_node-tags/uaccess/nvidia-uvm-tools - - - - /dev/nvidia-uvm-tools
-L /run/udev/static_node-tags/uaccess/nvidia-modeset - - - - /dev/nvidia-modeset
-EOF
-devid=-1
-for dev in $(ls -d /sys/bus/pci/devices/*); do 
-  vendorid=$(cat $dev/vendor)
-  if [ "$vendorid" == "0x10de" ]; then 
-    class=$(cat $dev/class)
-    classid=${class%%00}
-    if [ "$classid" == "0x0300" -o "$classid" == "0x0302" ]; then 
-      devid=$((devid+1))
-      ln -snf /dev/nvidia${devid} /run/udev/static_node-tags/uaccess/nvidia${devid}
-      echo "L /run/udev/static_node-tags/uaccess/nvidia${devid} - - - - /dev/nvidia${devid}" >> /usr/lib/tmpfiles.d/nvidia-logind-acl-trick-G06.conf
-    fi
-  fi
-done
 
 %postun -n nvidia-common-G06
 if [ "$1" = 0 ] ; then
   /sbin/pbl --del-option rd.driver.blacklist=nouveau --config
   # cleanup of bnc# 1000625
-  rm -f /usr/lib/tmpfiles.d/nvidia-logind-acl-trick-G06.conf
+  %remove_if_exists /usr/lib/tmpfiles.d/nvidia-logind-acl-trick-G06.conf
 fi
 
 %post   -n nvidia-gl-G06 -p /sbin/ldconfig
